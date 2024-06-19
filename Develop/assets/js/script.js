@@ -1,70 +1,82 @@
 $(document).ready(function() {
-    // Initialize tasks from localStorage
-    function initializeTasks() {
-      // Retrieve tasks from localStorage and populate the board
-    }
-  
-    // Save tasks to localStorage
-    function saveTasks() {
-      // Save the current tasks to localStorage
-    }
-  
-    // Add a new task
-    $('#task-form').on('submit', function(event) {
+  function initializeTasks() {
+      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      tasks.forEach(task => {
+          const taskElement = $('<div>').addClass('task card my-2').attr('data-deadline', task.deadline);
+          taskElement.append($('<h5>').addClass('card-title').text(task.title));
+          taskElement.append($('<p>').addClass('card-text').text(task.description));
+          taskElement.append($('<p>').addClass('card-text').text('Due: ' + task.deadline));
+          taskElement.append($('<button>').addClass('btn btn-danger btn-sm delete-task').text('Delete'));
+          $('#' + task.status + '-cards').append(taskElement);
+      });
+      checkDeadlines();
+  }
+
+  function saveTasks() {
+      const tasks = [];
+      $('.lane').each(function() {
+          const laneId = $(this).attr('id').replace('-cards', '');
+          $(this).find('.task').each(function() {
+              const task = {
+                  title: $(this).find('.card-title').text(),
+                  description: $(this).find('.card-text').first().text(),
+                  deadline: $(this).attr('data-deadline'),
+                  status: laneId
+              };
+              tasks.push(task);
+          });
+      });
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+  }
+
+  $('#task-form').on('submit', function(event) {
       event.preventDefault();
-      // Get task details
+
       const title = $('#task-title').val().trim();
       const description = $('#task-desc').val().trim();
       const deadline = $('#task-date').val();
-      
+
       if (title && description && deadline) {
-        // Create task element and append to "To Do" column
-        const task = $('<div>').addClass('task card my-2').attr('data-deadline', deadline);
-        task.append($('<h5>').addClass('card-title').text(title));
-        task.append($('<p>').addClass('card-text').text(description));
-        task.append($('<p>').addClass('card-text').text('Due: ' + deadline));
-        task.append($('<button>').addClass('btn btn-danger btn-sm delete-task').text('Delete'));
-        $('#todo-cards').append(task);
-        
-        // Clear form fields
-        $('#task-form')[0].reset();
-        
-        // Save tasks to localStorage
-        saveTasks();
-        
-        // Close modal
-        $('#formModal').modal('hide');
+          const task = $('<div>').addClass('task card my-2').attr('data-deadline', deadline);
+          task.append($('<h5>').addClass('card-title').text(title));
+          task.append($('<p>').addClass('card-text').text(description));
+          task.append($('<p>').addClass('card-text').text('Due: ' + deadline));
+          task.append($('<button>').addClass('btn btn-danger btn-sm delete-task').text('Delete'));
+          $('#todo-cards').append(task);
+
+          $('#task-form')[0].reset();
+
+          saveTasks();
+
+          $('#formModal').modal('hide');
       }
-    });
-  
-    // Delete a task
-    $(document).on('click', '.delete-task', function() {
+  });
+
+  $(document).on('click', '.delete-task', function() {
       $(this).closest('.task').remove();
       saveTasks();
-    });
-  
-    // Make tasks draggable
-    $('.lane .card-body').sortable({
+  });
+
+  $('.lane .card-body').sortable({
       connectWith: '.lane .card-body',
       receive: function(event, ui) {
-        saveTasks();
+          saveTasks();
       }
-    }).disableSelection();
-  
-    // Check deadlines and apply color coding
-    function checkDeadlines() {
+  }).disableSelection();
+
+  function checkDeadlines() {
       const now = dayjs();
       $('.task').each(function() {
-        const deadline = dayjs($(this).attr('data-deadline'));
-        if (deadline.isBefore(now, 'day')) {
-          $(this).addClass('bg-danger text-white');
-        } else if (deadline.isBefore(now.add(1, 'week'), 'day')) {
-          $(this).addClass('bg-warning');
-        }
+          const deadline = dayjs($(this).attr('data-deadline'));
+          if (deadline.isBefore(now, 'day')) {
+              $(this).addClass('bg-danger text-white');
+          } else if (deadline.isBefore(now.add(1, 'week'), 'day')) {
+              $(this).addClass('bg-warning');
+          }
       });
-    }
-  
-    // Initialize the task board
-    initializeTasks();
-    checkDeadlines();
-  });
+  }
+
+  initializeTasks();
+  checkDeadlines();
+});
+
